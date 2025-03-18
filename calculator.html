@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Calculator</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Fredoka One", cursive;
+        background-color: #ffebf3;
+        text-align: center;
+      }
+
+      h1 {
+        font-size: 24px;
+        color: #ff69b4;
+        text-shadow: 2px 2px #ffb6c1;
+      }
+
+      .displayContainer {
+        background-color: #fff;
+        padding: 10px;
+        border-radius: 15px;
+        width: 300px;
+        margin: 10px auto;
+        box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      #display {
+        font-family: "Fredoka One", cursive;
+        font-size: 28px;
+        color: #ff69b4;
+      }
+
+      .flexContainer {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        width: 320px;
+        margin: auto;
+        padding: 10px;
+      }
+
+      .button {
+        width: 70px;
+        height: 70px;
+        border: none;
+        border-radius: 15px; /* round buttons */
+        font-size: 20px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+        box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.2);
+      }
+
+      .number {
+        background-color: #ffa3ebb5;
+        color: #333;
+      }
+
+      .operator {
+        background-color: #add8e6;
+        color: #333;
+      }
+
+      .equals {
+        background-color: #ff69b4;
+        color: white;
+      }
+
+      .clear {
+        background-color: #f4de60;
+      }
+
+      .button:hover {
+        transform: scale(1.1);
+        box-shadow: 0px 4px 15px rgba(255, 182, 193, 0.7);
+      }
+
+      @keyframes buttonPress {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(0.9);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      .button:active {
+        animation: buttonPress 0.2s ease-in-out;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>Calculator</h1>
+    <div class="displayContainer">
+      <span id="display">0</span>
+    </div>
+
+    <div class="flexContainer">
+      <button class="button number">7</button>
+      <button class="button number">8</button>
+      <button class="button number">9</button>
+      <button class="button operator">/</button>
+
+      <button class="button number">4</button>
+      <button class="button number">5</button>
+      <button class="button number">6</button>
+      <button class="button operator">*</button>
+
+      <button class="button number">1</button>
+      <button class="button number">2</button>
+      <button class="button number">3</button>
+      <button class="button operator">-</button>
+
+      <button class="button number">0</button>
+      <button class="button decimal">.</button>
+      <button class="button equals">=</button>
+      <button class="button operator">+</button>
+
+      <button class="button parenthesis">(</button>
+      <button class="button parenthesis">)</button>
+
+      <button class="button clear">C</button>
+    </div>
+
+    <script>
+      const numbersArr = Array.from(document.getElementsByClassName("number"));
+      const operatorsArr = Array.from(
+        document.getElementsByClassName("operator")
+      );
+      const parenthesisArr = Array.from(
+        document.getElementsByClassName("parenthesis")
+      );
+      const equalsArr = Array.from(document.getElementsByClassName("equals"));
+      const clearArr = Array.from(document.getElementsByClassName("clear"));
+      const numberStrs = "0123456789".split("");
+
+      const operations = {
+        "+": (a, b) => a + b,
+        "-": (a, b) => a - b,
+        "*": (a, b) => a * b,
+        "/": (a, b) => a / b,
+      };
+
+      const data = {
+        displayString: "0",
+        appendStringNum: (newChar) => {
+          if (numberStrs.includes(newChar)) {
+            if (data.displayString === "0") {
+              data.displayString = "";
+            }
+            data.displayString += newChar;
+          }
+          data.updateDisplay();
+        },
+
+        appendStringOperator: (newChar) => {
+          if (
+            numberStrs.includes(data.displayString.slice(-1)) ||
+            data.displayString.slice(-1) === ")" || 
+            (newChar === "-" &&
+              (data.displayString === "0" ||
+                data.displayString.slice(-1) === "(")) 
+          ) {
+            data.displayString += newChar;
+          }
+          data.updateDisplay();
+        },
+
+        updateDisplay: () => {
+          document.getElementById("display").innerText = data.displayString;
+        },
+
+        evaluateExpression: () => {
+          let expression = data.displayString;
+          let postfixExpression = data.infixtoPostfix(expression);
+          console.log("Postfix Expression:", postfixExpression);
+
+          let result = data.evaluatePostfix(postfixExpression);
+          console.log("Result:", result);
+
+          data.displayString = String(result);
+          data.updateDisplay();
+        },
+
+        infixtoPostfix: (expression) => {
+          let userInput = [];
+          let operatorStack = [];
+          let multiDigit = "";
+          const precedence = { "+": 1, "-": 1, "*": 2, "/": 2 };
+
+          for (let i = 0; i < expression.length; i++) {
+            let char = expression[i];
+
+            if (char >= "0" && char <= "9") {
+              multiDigit += char;
+            } else {
+              if (multiDigit.length > 0) {
+                userInput.push(multiDigit);
+                multiDigit = "";
+              }
+
+              if ("+-*/".includes(char)) {
+                while (
+                  operatorStack.length > 0 &&
+                  precedence[operatorStack[operatorStack.length - 1]] >=
+                    precedence[char]
+                ) {
+                  userInput.push(operatorStack.pop());
+                }
+                operatorStack.push(char);
+              }
+            }
+          }
+
+          if (multiDigit.length > 0) {
+            userInput.push(multiDigit);
+          }
+
+          while (operatorStack.length > 0) {
+            userInput.push(operatorStack.pop());
+          }
+
+          return userInput;
+        },
+
+        evaluatePostfix: (postfixArray) => {
+          let stack = [];
+
+          for (let token of postfixArray) {
+            if (!isNaN(token)) {
+              stack.push(Number(token));
+            } else if (operations[token]) {
+              if (stack.length < 2) {
+                console.error("Invalid: Not enough operands");
+                return NaN;
+              }
+              let b = stack.pop();
+              let a = stack.pop();
+              let result = operations[token](a, b);
+              stack.push(result);
+            }
+          }
+
+          return stack.length === 1 ? stack.pop() : NaN;
+        },
+
+        clearDisplay: () => {
+          data.displayString = "0"; // reset to default
+          data.updateDisplay();
+        },
+      };
+
+      numbersArr.map((elem) => {
+        elem.addEventListener("click", () => {
+          data.appendStringNum(elem.innerText);
+        });
+      });
+
+      operatorsArr.map((elem) => {
+        elem.addEventListener("click", () => {
+          data.appendStringOperator(elem.innerText);
+        });
+      });
+
+      equalsArr.map((elem) => {
+        elem.addEventListener("click", () => {
+          data.evaluateExpression();
+        });
+      });
+
+      clearArr.map((elem) => {
+        elem.addEventListener("click", () => {
+          data.clearDisplay();
+        });
+      });
+    </script>
+  </body>
+</html>
