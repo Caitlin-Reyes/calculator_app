@@ -47,7 +47,7 @@
         width: 70px;
         height: 70px;
         border: none;
-        border-radius: 15px; /* round buttons */
+        border-radius: 15px;
         font-size: 20px;
         font-weight: bold;
         cursor: pointer;
@@ -151,25 +151,40 @@
 
       const data = {
         displayString: "0",
+
         appendStringNum: (newChar) => {
-          if (numberStrs.includes(newChar)) {
-            if (data.displayString === "0") {
-              data.displayString = "";
-            }
-            data.displayString += newChar;
+          if (data.displayString === "0") {
+            data.displayString = "";
           }
+          data.displayString += newChar;
           data.updateDisplay();
         },
 
         appendStringOperator: (newChar) => {
           if (
             numberStrs.includes(data.displayString.slice(-1)) ||
-            data.displayString.slice(-1) === ")" || 
-            (newChar === "-" &&
-              (data.displayString === "0" ||
-                data.displayString.slice(-1) === "(")) 
+            data.displayString.slice(-1) === ")"
           ) {
             data.displayString += newChar;
+          }
+          data.updateDisplay();
+        },
+
+        appendStringParenthesis: (newChar) => {
+          if (newChar === "(") {
+            if (data.displayString === "0") {
+              data.displayString = "";
+            }
+            data.displayString += newChar;
+          } else if (newChar === ")") {
+            const openCount = data.displayString.split("(").length - 1;
+            const closeCount = data.displayString.split(")").length - 1;
+            if (
+              openCount > closeCount &&
+              numberStrs.includes(data.displayString.slice(-1))
+            ) {
+              data.displayString += newChar;
+            }
           }
           data.updateDisplay();
         },
@@ -181,10 +196,10 @@
         evaluateExpression: () => {
           let expression = data.displayString;
           let postfixExpression = data.infixtoPostfix(expression);
-          console.log("Postfix Expression:", postfixExpression);
+          console.log("postfix expression:", postfixExpression);
 
           let result = data.evaluatePostfix(postfixExpression);
-          console.log("Result:", result);
+          console.log("result:", result);
 
           data.displayString = String(result);
           data.updateDisplay();
@@ -207,7 +222,17 @@
                 multiDigit = "";
               }
 
-              if ("+-*/".includes(char)) {
+              if (char === "(") {
+                operatorStack.push(char);
+              } else if (char === ")") {
+                while (
+                  operatorStack.length > 0 &&
+                  operatorStack[operatorStack.length - 1] !== "("
+                ) {
+                  userInput.push(operatorStack.pop());
+                }
+                operatorStack.pop();
+              } else if ("+-*/".includes(char)) {
                 while (
                   operatorStack.length > 0 &&
                   precedence[operatorStack[operatorStack.length - 1]] >=
@@ -238,14 +263,9 @@
             if (!isNaN(token)) {
               stack.push(Number(token));
             } else if (operations[token]) {
-              if (stack.length < 2) {
-                console.error("Invalid: Not enough operands");
-                return NaN;
-              }
               let b = stack.pop();
               let a = stack.pop();
-              let result = operations[token](a, b);
-              stack.push(result);
+              stack.push(operations[token](a, b));
             }
           }
 
@@ -253,34 +273,32 @@
         },
 
         clearDisplay: () => {
-          data.displayString = "0"; // reset to default
+          data.displayString = "0";
           data.updateDisplay();
         },
       };
 
-      numbersArr.map((elem) => {
-        elem.addEventListener("click", () => {
-          data.appendStringNum(elem.innerText);
-        });
-      });
-
-      operatorsArr.map((elem) => {
-        elem.addEventListener("click", () => {
-          data.appendStringOperator(elem.innerText);
-        });
-      });
-
-      equalsArr.map((elem) => {
-        elem.addEventListener("click", () => {
-          data.evaluateExpression();
-        });
-      });
-
-      clearArr.map((elem) => {
-        elem.addEventListener("click", () => {
-          data.clearDisplay();
-        });
-      });
+      numbersArr.map((elem) =>
+        elem.addEventListener("click", () =>
+          data.appendStringNum(elem.innerText)
+        )
+      );
+      operatorsArr.map((elem) =>
+        elem.addEventListener("click", () =>
+          data.appendStringOperator(elem.innerText)
+        )
+      );
+      parenthesisArr.map((elem) =>
+        elem.addEventListener("click", () =>
+          data.appendStringParenthesis(elem.innerText)
+        )
+      );
+      equalsArr.map((elem) =>
+        elem.addEventListener("click", () => data.evaluateExpression())
+      );
+      clearArr.map((elem) =>
+        elem.addEventListener("click", () => data.clearDisplay())
+      );
     </script>
   </body>
 </html>
